@@ -1,0 +1,1033 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Light Pillar Effect</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            overflow: hidden;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 10;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #48FF28, #9EF19E);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 20px rgba(72, 255, 40, 0.3);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .canvas-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 0 auto 40px;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(72, 255, 40, 0.1);
+        }
+
+        #glCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .canvas-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            background: radial-gradient(circle at center, transparent 30%, rgba(0, 0, 0, 0.7) 100%);
+            z-index: 1;
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            margin: 0 auto 40px;
+            max-width: 900px;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #48FF28;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #48FF28;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(72, 255, 40, 0.5);
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #3BE318;
+            transform: scale(1.2);
+            box-shadow: 0 0 20px rgba(72, 255, 40, 0.8);
+        }
+
+        .range-value {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .value-display {
+            color: #48FF28;
+            font-weight: 600;
+        }
+
+        .color-picker {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .color-input {
+            flex: 1;
+            height: 40px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            background: transparent;
+        }
+
+        .color-input::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        .color-input::-webkit-color-swatch {
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #48FF28;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            color: white;
+        }
+
+        .reset-btn {
+            background: rgba(255, 72, 72, 0.2);
+            border: 1px solid rgba(255, 72, 72, 0.3);
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 72, 72, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 72, 72, 0.2);
+        }
+
+        .fullscreen-btn {
+            background: rgba(72, 255, 40, 0.2);
+            border: 1px solid rgba(72, 255, 40, 0.3);
+        }
+
+        .fullscreen-btn:hover {
+            background: rgba(72, 255, 40, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(72, 255, 40, 0.2);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #48FF28, #9EF19E);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .info {
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .warning {
+            background: rgba(255, 107, 107, 0.1);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 20px 0;
+            display: none;
+        }
+
+        .warning.active {
+            display: block;
+        }
+
+        .blend-mode-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .blend-mode-btn {
+            padding: 8px 15px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .blend-mode-btn:hover {
+            background: rgba(72, 255, 40, 0.2);
+            border-color: #48FF28;
+        }
+
+        .blend-mode-btn.active {
+            background: linear-gradient(45deg, #48FF28, #9EF19E);
+            border-color: transparent;
+            color: #0c0c0c;
+            font-weight: 600;
+        }
+
+        @media (max-width: 850px) {
+            .canvas-container {
+                width: 100%;
+                height: 400px;
+            }
+            
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>3D Light Pillar Effect</h1>
+            <p class="subtitle">Real-time WebGL light simulation using Three.js. Move your mouse to interact.</p>
+        </header>
+
+        <div class="warning" id="webglWarning">
+            <strong>WebGL Not Supported</strong>
+            <p>Your browser doesn't support WebGL which is required for this effect. Please try a different browser like Chrome or Firefox.</p>
+        </div>
+
+        <div class="canvas-container">
+            <canvas id="glCanvas"></canvas>
+            <div class="canvas-overlay"></div>
+        </div>
+
+        <div class="controls-panel">
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="intensity">Intensity: <span id="intensityValue" class="value-display">1.0</span></label>
+                    <input type="range" id="intensity" min="0.1" max="3" value="1" step="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label for="rotationSpeed">Rotation Speed: <span id="rotationSpeedValue" class="value-display">0.3</span></label>
+                    <input type="range" id="rotationSpeed" min="0" max="2" value="0.3" step="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label for="glowAmount">Glow Amount: <span id="glowAmountValue" class="value-display">0.005</span></label>
+                    <input type="range" id="glowAmount" min="0.001" max="0.02" value="0.005" step="0.001">
+                </div>
+
+                <div class="control-group">
+                    <label for="pillarWidth">Pillar Width: <span id="pillarWidthValue" class="value-display">3.0</span></label>
+                    <input type="range" id="pillarWidth" min="0.5" max="10" value="3" step="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label for="pillarHeight">Pillar Height: <span id="pillarHeightValue" class="value-display">0.4</span></label>
+                    <input type="range" id="pillarHeight" min="0.1" max="2" value="0.4" step="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label for="noiseIntensity">Noise Intensity: <span id="noiseIntensityValue" class="value-display">0.5</span></label>
+                    <input type="range" id="noiseIntensity" min="0" max="1" value="0.5" step="0.1">
+                </div>
+
+                <div class="control-group">
+                    <label for="pillarRotation">Pillar Rotation: <span id="pillarRotationValue" class="value-display">0°</span></label>
+                    <input type="range" id="pillarRotation" min="0" max="360" value="0" step="1">
+                </div>
+
+                <div class="control-group">
+                    <label>Colors</label>
+                    <div class="color-picker">
+                        <input type="color" id="topColor" class="color-input" value="#48FF28">
+                        <input type="color" id="bottomColor" class="color-input" value="#9EF19E">
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Interactive Mode</label>
+                    <div class="toggle-group">
+                        <label class="toggle-switch">
+                            <input type="checkbox" id="interactive" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>Mouse Interaction</span>
+                    </div>
+                </div>
+
+                <div class="control-group">
+                    <label>Blend Mode</label>
+                    <div class="blend-mode-selector">
+                        <button class="blend-mode-btn active" data-mode="screen">Screen</button>
+                        <button class="blend-mode-btn" data-mode="add">Add</button>
+                        <button class="blend-mode-btn" data-mode="lighten">Lighten</button>
+                        <button class="blend-mode-btn" data-mode="normal">Normal</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-buttons">
+                <button class="action-btn reset-btn" id="resetBtn">Reset to Default</button>
+                <button class="action-btn fullscreen-btn" id="fullscreenBtn">Fullscreen</button>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="fpsCounter">60</div>
+                <div class="stat-label">FPS</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="drawCalls">1</div>
+                <div class="stat-label">Draw Calls</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">Three.js</div>
+                <div class="stat-label">Renderer</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="resolution">800×600</div>
+                <div class="stat-label">Resolution</div>
+            </div>
+        </div>
+
+        <div class="info">
+            <p>This effect uses ray marching in a fragment shader to create volumetric light pillars.</p>
+            <p>Enable interactive mode and move your mouse to control the rotation of the pillars.</p>
+        </div>
+    </div>
+
+    <!-- Three.js Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    
+    <script>
+        class LightPillarEffect {
+            constructor() {
+                this.canvas = document.getElementById('glCanvas');
+                this.webglWarning = document.getElementById('webglWarning');
+                
+                // Check WebGL support
+                const gl = this.canvas.getContext('webgl2') || this.canvas.getContext('webgl') || 
+                          this.canvas.getContext('experimental-webgl');
+                
+                if (!gl) {
+                    this.webglWarning.classList.add('active');
+                    return;
+                }
+                
+                // Effect parameters (defaults from Vue component)
+                this.params = {
+                    topColor: '#48FF28',
+                    bottomColor: '#9EF19E',
+                    intensity: 1.0,
+                    rotationSpeed: 0.3,
+                    interactive: true,
+                    glowAmount: 0.005,
+                    pillarWidth: 3.0,
+                    pillarHeight: 0.4,
+                    noiseIntensity: 0.5,
+                    mixBlendMode: 'screen',
+                    pillarRotation: 0
+                };
+                
+                this.renderer = null;
+                this.scene = null;
+                this.camera = null;
+                this.material = null;
+                this.mesh = null;
+                this.rafId = null;
+                this.time = 0;
+                this.mouse = new THREE.Vector2(0, 0);
+                this.lastFrameTime = 0;
+                this.frameCount = 0;
+                this.fps = 60;
+                this.lastFpsUpdate = 0;
+                this.mouseMoveTimeout = null;
+                
+                this.init();
+            }
+            
+            init() {
+                this.initThree();
+                this.initShaders();
+                this.initScene();
+                this.bindControls();
+                this.setupEventListeners();
+                this.animate(0);
+            }
+            
+            initThree() {
+                const container = this.canvas.parentElement;
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                
+                // Create renderer
+                this.renderer = new THREE.WebGLRenderer({
+                    canvas: this.canvas,
+                    antialias: false,
+                    alpha: true,
+                    powerPreference: 'high-performance',
+                    precision: 'lowp',
+                    stencil: false,
+                    depth: false
+                });
+                
+                this.renderer.setSize(width, height);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                
+                // Update resolution display
+                document.getElementById('resolution').textContent = `${width}×${height}`;
+            }
+            
+            initShaders() {
+                // Vertex shader (simple pass-through)
+                const vertexShader = `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = vec4(position, 1.0);
+                    }
+                `;
+                
+                // Fragment shader (exact same as Vue component)
+                const fragmentShader = `
+                    uniform float uTime;
+                    uniform vec2 uResolution;
+                    uniform vec2 uMouse;
+                    uniform vec3 uTopColor;
+                    uniform vec3 uBottomColor;
+                    uniform float uIntensity;
+                    uniform bool uInteractive;
+                    uniform float uGlowAmount;
+                    uniform float uPillarWidth;
+                    uniform float uPillarHeight;
+                    uniform float uNoiseIntensity;
+                    uniform float uPillarRotation;
+                    varying vec2 vUv;
+
+                    const float PI = 3.141592653589793;
+                    const float EPSILON = 0.001;
+                    const float E = 2.71828182845904523536;
+                    const float HALF = 0.5;
+
+                    mat2 rot(float angle) {
+                        float s = sin(angle);
+                        float c = cos(angle);
+                        return mat2(c, -s, s, c);
+                    }
+
+                    // Procedural noise function
+                    float noise(vec2 coord) {
+                        float G = E;
+                        vec2 r = (G * sin(G * coord));
+                        return fract(r.x * r.y * (1.0 + coord.x));
+                    }
+
+                    // Apply layered wave deformation to position
+                    vec3 applyWaveDeformation(vec3 pos, float timeOffset) {
+                        float frequency = 1.0;
+                        float amplitude = 1.0;
+                        vec3 deformed = pos;
+
+                        for(float i = 0.0; i < 4.0; i++) {
+                            deformed.xz *= rot(0.4);
+                            float phase = timeOffset * i * 2.0;
+                            vec3 oscillation = cos(deformed.zxy * frequency - phase);
+                            deformed += oscillation * amplitude;
+                            frequency *= 2.0;
+                            amplitude *= HALF;
+                        }
+                        return deformed;
+                    }
+
+                    // Polynomial smooth blending between two values
+                    float blendMin(float a, float b, float k) {
+                        float scaledK = k * 4.0;
+                        float h = max(scaledK - abs(a - b), 0.0);
+                        return min(a, b) - h * h * 0.25 / scaledK;
+                    }
+
+                    float blendMax(float a, float b, float k) {
+                        return -blendMin(-a, -b, k);
+                    }
+
+                    void main() {
+                        vec2 fragCoord = vUv * uResolution;
+                        vec2 uv = (fragCoord * 2.0 - uResolution) / uResolution.y;
+
+                        // Apply 2D rotation to UV coordinates
+                        float rotAngle = uPillarRotation * PI / 180.0;
+                        uv *= rot(rotAngle);
+
+                        vec3 origin = vec3(0.0, 0.0, -10.0);
+                        vec3 direction = normalize(vec3(uv, 1.0));
+
+                        float maxDepth = 50.0;
+                        float depth = 0.1;
+
+                        mat2 rotX = rot(uTime * 0.3);
+                        if(uInteractive && length(uMouse) > 0.0) {
+                            rotX = rot(uMouse.x * PI * 2.0);
+                        }
+
+                        vec3 color = vec3(0.0);
+
+                        for(float i = 0.0; i < 100.0; i++) {
+                            vec3 pos = origin + direction * depth;
+                            pos.xz *= rotX;
+
+                            // Apply vertical scaling and wave deformation
+                            vec3 deformed = pos;
+                            deformed.y *= uPillarHeight;
+                            deformed = applyWaveDeformation(deformed + vec3(0.0, uTime, 0.0), uTime);
+
+                            // Calculate distance field using cosine pattern
+                            vec2 cosinePair = cos(deformed.xz);
+                            float fieldDistance = length(cosinePair) - 0.2;
+
+                            // Radial boundary constraint
+                            float radialBound = length(pos.xz) - uPillarWidth;
+                            fieldDistance = blendMax(radialBound, fieldDistance, 1.0);
+                            fieldDistance = abs(fieldDistance) * 0.15 + 0.01;
+
+                            vec3 gradient = mix(uBottomColor, uTopColor, smoothstep(15.0, -15.0, pos.y));
+                            color += gradient * pow(1.0 / fieldDistance, 1.0);
+
+                            if(fieldDistance < EPSILON || depth > maxDepth) break;
+                            depth += fieldDistance;
+                        }
+
+                        // Normalize by pillar width to maintain consistent glow regardless of size
+                        float widthNormalization = uPillarWidth / 3.0;
+                        color = tanh(color * uGlowAmount / widthNormalization);
+
+                        // Add noise postprocessing
+                        float rnd = noise(gl_FragCoord.xy);
+                        color -= rnd / 15.0 * uNoiseIntensity;
+
+                        gl_FragColor = vec4(color * uIntensity, 1.0);
+                    }
+                `;
+                
+                // Convert hex color to THREE.Vector3
+                const hexToVector3 = (hex) => {
+                    const color = new THREE.Color(hex);
+                    return new THREE.Vector3(color.r, color.g, color.b);
+                };
+                
+                // Create shader material
+                this.material = new THREE.ShaderMaterial({
+                    vertexShader,
+                    fragmentShader,
+                    uniforms: {
+                        uTime: { value: 0 },
+                        uResolution: { value: new THREE.Vector2(this.canvas.width, this.canvas.height) },
+                        uMouse: { value: this.mouse },
+                        uTopColor: { value: hexToVector3(this.params.topColor) },
+                        uBottomColor: { value: hexToVector3(this.params.bottomColor) },
+                        uIntensity: { value: this.params.intensity },
+                        uInteractive: { value: this.params.interactive },
+                        uGlowAmount: { value: this.params.glowAmount },
+                        uPillarWidth: { value: this.params.pillarWidth },
+                        uPillarHeight: { value: this.params.pillarHeight },
+                        uNoiseIntensity: { value: this.params.noiseIntensity },
+                        uPillarRotation: { value: this.params.pillarRotation * Math.PI / 180 }
+                    },
+                    transparent: true,
+                    depthWrite: false,
+                    depthTest: false
+                });
+            }
+            
+            initScene() {
+                this.scene = new THREE.Scene();
+                
+                // Orthographic camera for full-screen quad
+                this.camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+                
+                // Create full-screen quad
+                const geometry = new THREE.PlaneGeometry(2, 2);
+                this.mesh = new THREE.Mesh(geometry, this.material);
+                this.scene.add(this.mesh);
+                
+                // Apply blend mode to canvas
+                this.canvas.style.mixBlendMode = this.params.mixBlendMode;
+            }
+            
+            bindControls() {
+                // Intensity
+                const intensity = document.getElementById('intensity');
+                const intensityValue = document.getElementById('intensityValue');
+                intensity.addEventListener('input', (e) => {
+                    this.params.intensity = parseFloat(e.target.value);
+                    intensityValue.textContent = this.params.intensity.toFixed(1);
+                    this.material.uniforms.uIntensity.value = this.params.intensity;
+                });
+                
+                // Rotation Speed
+                const rotationSpeed = document.getElementById('rotationSpeed');
+                const rotationSpeedValue = document.getElementById('rotationSpeedValue');
+                rotationSpeed.addEventListener('input', (e) => {
+                    this.params.rotationSpeed = parseFloat(e.target.value);
+                    rotationSpeedValue.textContent = this.params.rotationSpeed.toFixed(1);
+                });
+                
+                // Glow Amount
+                const glowAmount = document.getElementById('glowAmount');
+                const glowAmountValue = document.getElementById('glowAmountValue');
+                glowAmount.addEventListener('input', (e) => {
+                    this.params.glowAmount = parseFloat(e.target.value);
+                    glowAmountValue.textContent = this.params.glowAmount.toFixed(3);
+                    this.material.uniforms.uGlowAmount.value = this.params.glowAmount;
+                });
+                
+                // Pillar Width
+                const pillarWidth = document.getElementById('pillarWidth');
+                const pillarWidthValue = document.getElementById('pillarWidthValue');
+                pillarWidth.addEventListener('input', (e) => {
+                    this.params.pillarWidth = parseFloat(e.target.value);
+                    pillarWidthValue.textContent = this.params.pillarWidth.toFixed(1);
+                    this.material.uniforms.uPillarWidth.value = this.params.pillarWidth;
+                });
+                
+                // Pillar Height
+                const pillarHeight = document.getElementById('pillarHeight');
+                const pillarHeightValue = document.getElementById('pillarHeightValue');
+                pillarHeight.addEventListener('input', (e) => {
+                    this.params.pillarHeight = parseFloat(e.target.value);
+                    pillarHeightValue.textContent = this.params.pillarHeight.toFixed(1);
+                    this.material.uniforms.uPillarHeight.value = this.params.pillarHeight;
+                });
+                
+                // Noise Intensity
+                const noiseIntensity = document.getElementById('noiseIntensity');
+                const noiseIntensityValue = document.getElementById('noiseIntensityValue');
+                noiseIntensity.addEventListener('input', (e) => {
+                    this.params.noiseIntensity = parseFloat(e.target.value);
+                    noiseIntensityValue.textContent = this.params.noiseIntensity.toFixed(1);
+                    this.material.uniforms.uNoiseIntensity.value = this.params.noiseIntensity;
+                });
+                
+                // Pillar Rotation
+                const pillarRotation = document.getElementById('pillarRotation');
+                const pillarRotationValue = document.getElementById('pillarRotationValue');
+                pillarRotation.addEventListener('input', (e) => {
+                    this.params.pillarRotation = parseFloat(e.target.value);
+                    pillarRotationValue.textContent = `${this.params.pillarRotation}°`;
+                    this.material.uniforms.uPillarRotation.value = this.params.pillarRotation * Math.PI / 180;
+                });
+                
+                // Colors
+                const topColor = document.getElementById('topColor');
+                const bottomColor = document.getElementById('bottomColor');
+                
+                topColor.addEventListener('input', (e) => {
+                    this.params.topColor = e.target.value;
+                    const color = new THREE.Color(this.params.topColor);
+                    this.material.uniforms.uTopColor.value.set(color.r, color.g, color.b);
+                });
+                
+                bottomColor.addEventListener('input', (e) => {
+                    this.params.bottomColor = e.target.value;
+                    const color = new THREE.Color(this.params.bottomColor);
+                    this.material.uniforms.uBottomColor.value.set(color.r, color.g, color.b);
+                });
+                
+                // Interactive toggle
+                const interactive = document.getElementById('interactive');
+                interactive.addEventListener('change', (e) => {
+                    this.params.interactive = e.target.checked;
+                    this.material.uniforms.uInteractive.value = this.params.interactive;
+                });
+                
+                // Blend mode buttons
+                document.querySelectorAll('.blend-mode-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const mode = e.target.dataset.mode;
+                        this.params.mixBlendMode = mode;
+                        this.canvas.style.mixBlendMode = mode;
+                        
+                        // Update button states
+                        document.querySelectorAll('.blend-mode-btn').forEach(b => {
+                            b.classList.remove('active');
+                        });
+                        e.target.classList.add('active');
+                    });
+                });
+                
+                // Reset button
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetToDefault();
+                });
+                
+                // Fullscreen button
+                document.getElementById('fullscreenBtn').addEventListener('click', () => {
+                    this.toggleFullscreen();
+                });
+            }
+            
+            setupEventListeners() {
+                // Mouse movement
+                this.canvas.addEventListener('mousemove', (e) => {
+                    if (!this.params.interactive) return;
+                    
+                    // Throttle mouse updates
+                    if (this.mouseMoveTimeout) return;
+                    
+                    this.mouseMoveTimeout = setTimeout(() => {
+                        this.mouseMoveTimeout = null;
+                    }, 16);
+                    
+                    const rect = this.canvas.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                    const y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+                    
+                    this.mouse.set(x, y);
+                    this.material.uniforms.uMouse.value = this.mouse;
+                });
+                
+                // Mouse leave
+                this.canvas.addEventListener('mouseleave', () => {
+                    this.mouse.set(0, 0);
+                    this.material.uniforms.uMouse.value = this.mouse;
+                });
+                
+                // Window resize
+                let resizeTimeout;
+                window.addEventListener('resize', () => {
+                    clearTimeout(resizeTimeout);
+                    resizeTimeout = setTimeout(() => {
+                        this.handleResize();
+                    }, 150);
+                });
+            }
+            
+            handleResize() {
+                if (!this.renderer) return;
+                
+                const container = this.canvas.parentElement;
+                const width = container.clientWidth;
+                const height = container.clientHeight;
+                
+                this.renderer.setSize(width, height);
+                this.material.uniforms.uResolution.value.set(width, height);
+                
+                // Update resolution display
+                document.getElementById('resolution').textContent = `${width}×${height}`;
+            }
+            
+            animate(timestamp) {
+                this.rafId = requestAnimationFrame(this.animate.bind(this));
+                
+                // Calculate delta time
+                const deltaTime = timestamp - this.lastFrameTime;
+                this.lastFrameTime = timestamp;
+                
+                // Update time
+                this.time += deltaTime * 0.001 * this.params.rotationSpeed;
+                this.material.uniforms.uTime.value = this.time;
+                
+                // Render
+                this.renderer.render(this.scene, this.camera);
+                
+                // Update FPS counter
+                this.frameCount++;
+                if (timestamp - this.lastFpsUpdate >= 1000) {
+                    this.fps = Math.round((this.frameCount * 1000) / (timestamp - this.lastFpsUpdate));
+                    document.getElementById('fpsCounter').textContent = this.fps;
+                    this.frameCount = 0;
+                    this.lastFpsUpdate = timestamp;
+                }
+            }
+            
+            resetToDefault() {
+                // Reset parameters
+                this.params = {
+                    topColor: '#48FF28',
+                    bottomColor: '#9EF19E',
+                    intensity: 1.0,
+                    rotationSpeed: 0.3,
+                    interactive: true,
+                    glowAmount: 0.005,
+                    pillarWidth: 3.0,
+                    pillarHeight: 0.4,
+                    noiseIntensity: 0.5,
+                    mixBlendMode: 'screen',
+                    pillarRotation: 0
+                };
+                
+                // Update controls
+                document.getElementById('intensity').value = this.params.intensity;
+                document.getElementById('intensityValue').textContent = this.params.intensity.toFixed(1);
+                
+                document.getElementById('rotationSpeed').value = this.params.rotationSpeed;
+                document.getElementById('rotationSpeedValue').textContent = this.params.rotationSpeed.toFixed(1);
+                
+                document.getElementById('glowAmount').value = this.params.glowAmount;
+                document.getElementById('glowAmountValue').textContent = this.params.glowAmount.toFixed(3);
+                
+                document.getElementById('pillarWidth').value = this.params.pillarWidth;
+                document.getElementById('pillarWidthValue').textContent = this.params.pillarWidth.toFixed(1);
+                
+                document.getElementById('pillarHeight').value = this.params.pillarHeight;
+                document.getElementById('pillarHeightValue').textContent = this.params.pillarHeight.toFixed(1);
+                
+                document.getElementById('noiseIntensity').value = this.params.noiseIntensity;
+                document.getElementById('noiseIntensityValue').textContent = this.params.noiseIntensity.toFixed(1);
+                
+                document.getElementById('pillarRotation').value = this.params.pillarRotation;
+                document.getElementById('pillarRotationValue').textContent = `${this.params.pillarRotation}°`;
+                
+                document.getElementById('topColor').value = this.params.topColor;
+                document.getElementById('bottomColor').value = this.params.bottomColor;
+                
+                document.getElementById('interactive').checked = this.params.interactive;
+                
+                // Update blend mode
+                this.canvas.style.mixBlendMode = this.params.mixBlendMode;
+                document.querySelectorAll('.blend-mode-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('.blend-mode-btn[data-mode="screen"]').classList.add('active');
+                
+                // Update uniforms
+                const topColor = new THREE.Color(this.params.topColor);
+                const bottomColor = new THREE.Color(this.params.bottomColor);
+                
+                this.material.uniforms.uTopColor.value.set(topColor.r, topColor.g, topColor.b);
+                this.material.uniforms.uBottomColor.value.set(bottomColor.r, bottomColor.g, bottomColor.b);
+                this.material.uniforms.uIntensity.value = this.params.intensity;
+                this.material.uniforms.uInteractive.value = this.params.interactive;
+                this.material.uniforms.uGlowAmount.value = this.params.glowAmount;
+                this.material.uniforms.uPillarWidth.value = this.params.pillarWidth;
+                this.material.uniforms.uPillarHeight.value = this.params.pillarHeight;
+                this.material.uniforms.uNoiseIntensity.value = this.params.noiseIntensity;
+                this.material.uniforms.uPillarRotation.value = this.params.pillarRotation * Math.PI / 180;
+            }
+            
+            toggleFullscreen() {
+                if (!document.fullscreenElement) {
+                    this.canvas.parentElement.requestFullscreen().catch(err => {
+                        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+                    });
+                } else {
+                    document.exitFullscreen();
+                }
+            }
+            
+            dispose() {
+                if (this.rafId) {
+                    cancelAnimationFrame(this.rafId);
+                }
+                
+                if (this.renderer) {
+                    this.renderer.dispose();
+                }
+                
+                if (this.material) {
+                    this.material.dispose();
+                }
+                
+                if (this.mesh && this.mesh.geometry) {
+                    this.mesh.geometry.dispose();
+                }
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const effect = new LightPillarEffect();
+            window.lightPillarEffect = effect;
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                effect.dispose();
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scroll Reveal Effect</title>
+     <link rel="stylesheet" href="Scroll_Reveal.css"/>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Scroll Reveal Demo</h1>
+            <p class="subtitle">Scroll down to see elements reveal with smooth animations. Customize the effect using the controls below.</p>
+        </header>
+
+        <div class="controls">
+            <div class="control-group">
+                <label for="blurToggle">Blur Effect</label>
+                <select id="blurToggle">
+                    <option value="true">Enabled</option>
+                    <option value="false" selected>Disabled</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="duration">Duration (ms): <span id="durationValue" class="range-value">1000</span></label>
+                <input type="range" id="duration" min="100" max="3000" value="1000" step="100">
+            </div>
+            
+            <div class="control-group">
+                <label for="easing">Easing Function</label>
+                <select id="easing">
+                    <option value="ease-out" selected>Ease Out</option>
+                    <option value="ease-in">Ease In</option>
+                    <option value="ease-in-out">Ease In Out</option>
+                    <option value="linear">Linear</option>
+                    <option value="cubic-bezier(0.68, -0.55, 0.265, 1.55)">Custom Bounce</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="delay">Delay (ms): <span id="delayValue" class="range-value">0</span></label>
+                <input type="range" id="delay" min="0" max="2000" value="0" step="100">
+            </div>
+            
+            <div class="control-group">
+                <label for="threshold">Threshold (%): <span id="thresholdValue" class="range-value">10</span></label>
+                <input type="range" id="threshold" min="0" max="100" value="10" step="5">
+            </div>
+            
+            <div class="control-group">
+                <label for="initialOpacity">Initial Opacity: <span id="opacityValue" class="range-value">0.0</span></label>
+                <input type="range" id="initialOpacity" min="0" max="100" value="0" step="10">
+            </div>
+        </div>
+
+        <div class="content-grid">
+            <div class="reveal-item" data-reveal>
+                <h2 class="item-title">Creative Design</h2>
+                <p class="item-content">This element reveals when it enters the viewport. The animation can be customized using the controls above. Try changing the easing function or duration!</p>
+            </div>
+            
+            <div class="reveal-item" data-reveal>
+                <h2 class="item-title">Smooth Animations</h2>
+                <p class="item-content">The reveal effect uses Intersection Observer API for optimal performance. Elements only animate when they become visible in the viewport.</p>
+            </div>
+            
+            <div class="reveal-item" data-reveal>
+                <h2 class="item-title">Performance Optimized</h2>
+                <p class="item-content">No performance impact on scroll. The observer disconnects once elements have been revealed, preventing unnecessary computations.</p>
+            </div>
+        </div>
+
+        <div class="demo-text" data-reveal>
+            <h2>Longer Content Example</h2>
+            <p>This is a larger content area that will reveal as you scroll. Notice how the animation applies smoothly to the entire element. You can adjust the threshold to control when the reveal triggers. A lower threshold means the element starts revealing earlier as you scroll.</p>
+            <p style="margin-top: 20px;">Try adjusting the delay setting to create a staggered reveal effect. This is perfect for lists, timelines, or any sequential content.</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item" data-reveal>
+                <span class="stat-number">99%</span>
+                <span class="stat-label">Performance Score</span>
+            </div>
+            <div class="stat-item" data-reveal>
+                <span class="stat-number">4.8/5</span>
+                <span class="stat-label">User Rating</span>
+            </div>
+            <div class="stat-item" data-reveal>
+                <span class="stat-number">10K+</span>
+                <span class="stat-label">Active Users</span>
+            </div>
+            <div class="stat-item" data-reveal>
+                <span class="stat-number">24/7</span>
+                <span class="stat-label">Support</span>
+            </div>
+        </div>
+
+        <div class="counter" data-reveal>
+            100%
+        </div>
+
+        <div class="image-gallery">
+            <div class="image-item" data-reveal>
+                <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb" alt="Mountain Landscape">
+                <div class="image-caption">Beautiful Mountain Landscape</div>
+            </div>
+            <div class="image-item" data-reveal>
+                <img src="https://images.unsplash.com/photo-1519681393784-d120267933ba" alt="Night Sky">
+                <div class="image-caption">Starry Night Sky</div>
+            </div>
+            <div class="image-item" data-reveal>
+                <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470" alt="Lake View">
+                <div class="image-caption">Serene Lake View</div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Scroll Reveal Effect Demo • Created with Vanilla JavaScript</p>
+            <p style="margin-top: 10px; opacity: 0.7;">Scroll up and down to see the reveal animations in action</p>
+        </footer>
+    </div>
+
+<script src="Scroll_Reveal.js"></script>
+</body>
+</html>

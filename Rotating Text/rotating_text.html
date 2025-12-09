@@ -1,0 +1,205 @@
+<!-- index-b.html -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Purple Box Rotator (B)</title>
+<style>
+  :root{
+    --letter-enter: 0.45s;
+    --letter-exit: 0.35s;
+    --letter-stagger: 0.06s;
+    --box-h-padding: 28px; /* horizontal padding used in JS when sizing */
+    --box-v-padding: 16px; /* vertical padding used in JS when sizing */
+  }
+
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    background: #000000e0;
+    color:#ffffff7c;
+    font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,"Poppins",sans-serif;
+  }
+
+  .container{
+    display:flex;
+    align-items:center;
+    gap:24px;
+  }
+
+  .static-word{
+    font-size:40px;
+    font-weight:800;
+    letter-spacing:0.02em;
+    text-transform:uppercase;
+  }
+
+  .rotating-box{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    background:linear-gradient(180deg,#6b21a8,#7c3aed); /* purple gradient */
+    border-radius:12px;
+    padding: var(--box-v-padding) var(--box-h-padding);
+    min-width:80px;
+    min-height:48px;
+    overflow:hidden;
+    transition: width 0.28s cubic-bezier(.2,.9,.25,1), height 0.28s cubic-bezier(.2,.9,.25,1);
+    transform-origin:center center;
+    /* optional subtle rotation animation of the box itself (disabled by default) */
+  }
+
+  /* rotating text container inside box */
+  #rotate {
+    display:inline-block;
+    font-size:30px;
+    font-weight:700;
+    letter-spacing:0.01em;
+    white-space:nowrap;
+  }
+
+  /* per-letter */
+  .char {
+    display:inline-block;
+    opacity:0;
+    transform:translateY(24px);
+    filter:blur(8px);
+    animation-name:letterEnter;
+    animation-duration: var(--letter-enter);
+    animation-fill-mode:forwards;
+    animation-timing-function: cubic-bezier(.22,.9,.3,1);
+  }
+
+  .char.exit {
+    animation-name:letterExit;
+    animation-duration: var(--letter-exit);
+    animation-fill-mode:forwards;
+    animation-timing-function: cubic-bezier(.25,.8,.35,1);
+  }
+
+    .char.space {
+        width: 12px;  /* increase this for more gap */
+        display: inline-block;
+    }   
+
+  @keyframes letterEnter {
+    0%{
+      opacity:0;
+      transform:translateY(24px);
+      filter:blur(8px);
+    }
+    60%{
+      opacity:1;
+      transform:translateY(0);
+      filter:blur(3.5px);
+    }
+    100%{
+      opacity:1;
+      transform:translateY(0);
+      filter:blur(0px);
+    }
+  }
+
+ 
+
+  /* small responsive tweak */
+  @media (max-width:520px){
+    .static-word{font-size:28px}
+    #rotate{font-size:22px}
+  }
+</style>
+</head>
+<body>
+
+<div class="container" aria-live="polite">
+  <div class="static-word">dvsk</div>
+  <div class="rotating-box" id="rotating-box">
+    <div id="rotate" aria-hidden="true"></div>
+  </div>
+</div>
+
+<script>
+/*
+  Purple-box rotator:
+  - words: array
+  - letters animate one-by-one with stagger and blur -> clear
+  - box auto-resizes to content (measured by rotate element + paddings)
+  - words loop automatically every interval ms
+*/
+
+(function(){
+ const words = [
+ "Chaos Crafted",
+  "Dark Origin",
+  "Black Monarch",
+  "YVL ★"
+];
+
+  const rotateEl = document.getElementById('rotate');
+  const box = document.getElementById('rotating-box');
+
+  const interval = 2200; // ms between word changes
+  const letterStagger = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--letter-stagger')) || 0.06;
+  const enterDur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--letter-enter')) || 0.45;
+  const exitDur = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--letter-exit')) || 0.35;
+  const padH = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--box-h-padding')) || 28;
+  const padV = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--box-v-padding')) || 16;
+
+  let idx = 0;
+  let timer = null;
+
+  function setBoxSizeToContent(){
+    // measure content width/height then apply padding
+    // small timeout to ensure layout updated
+    requestAnimationFrame(()=>{
+      const rect = rotateEl.getBoundingClientRect();
+      // add padding both sides
+      box.style.width = Math.max(80, Math.ceil(rect.width + padH * 2)) + 'px';
+      box.style.height = Math.max(48, Math.ceil(rect.height + padV * 2)) + 'px';
+    });
+  }
+
+  function showWord(word){
+    rotateEl.innerHTML = '';
+    const letters = Array.from(word);
+    letters.forEach((ch,i)=>{
+  const sp = document.createElement('span');
+  sp.className = 'char';
+
+  if (ch === " ") sp.classList.add("space"); // add spacing class
+
+  sp.textContent = ch;
+  sp.style.animationDelay = (i * letterStagger) + 's';
+  rotateEl.appendChild(sp);
+});
+
+    setBoxSizeToContent();
+  }
+
+function exitThenShowNext(){
+  // NO EXIT ANIMATION, NO GAP
+  idx = (idx + 1) % words.length;
+  showWord(words[idx]);
+}
+
+
+  // initialize first word
+  showWord(words[idx]);
+
+  // schedule automatic loop
+  timer = setInterval(exitThenShowNext, interval);
+
+  // expose for debug
+  window.PurpleRotator = {
+    next(){ exitThenShowNext(); },
+    stop(){ clearInterval(timer); timer = null; },
+    start(){ if(!timer) timer = setInterval(exitThenShowNext, interval); }
+  };
+
+})();
+</script>
+</body>
+</html>

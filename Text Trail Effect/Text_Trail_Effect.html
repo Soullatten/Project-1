@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Text Trail Effect</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #151515;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            overflow: hidden;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        #controls {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            max-width: 90%;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            min-width: 120px;
+        }
+
+        label {
+            color: white;
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 2px;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            color: white;
+            padding: 5px 8px;
+            font-size: 12px;
+            outline: none;
+        }
+
+        input[type="color"] {
+            width: 100%;
+            height: 30px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .checkbox-group label {
+            font-size: 12px;
+        }
+
+        input[type="checkbox"] {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        #text-display {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 15vw;
+            font-weight: 900;
+            font-family: 'Figtree', sans-serif;
+            pointer-events: none;
+            text-align: center;
+            opacity: 0;
+            z-index: 10;
+        }
+
+        @media (max-width: 768px) {
+            #controls {
+                flex-direction: column;
+                gap: 10px;
+            }
+            
+            .control-group {
+                min-width: 100%;
+            }
+            
+            #text-display {
+                font-size: 20vw;
+            }
+        }
+
+        /* Loading animation */
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 24px;
+            opacity: 0;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; }
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="container">
+        <canvas id="canvas"></canvas>
+        <div id="text-display">Vibe</div>
+        <div class="loading">Loading...</div>
+        
+        <div id="controls">
+            <div class="control-group">
+                <label for="textInput">Text</label>
+                <input type="text" id="textInput" value="Vibe">
+            </div>
+            
+            <div class="control-group">
+                <label for="fontFamily">Font Family</label>
+                <select id="fontFamily">
+                    <option value="Figtree" selected>Figtree</option>
+                    <option value="Arial">Arial</option>
+                    <option value="Helvetica">Helvetica</option>
+                    <option value="Courier New">Courier New</option>
+                    <option value="Georgia">Georgia</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="fontWeight">Font Weight</label>
+                <select id="fontWeight">
+                    <option value="300">300 (Light)</option>
+                    <option value="400">400 (Regular)</option>
+                    <option value="500">500 (Medium)</option>
+                    <option value="600">600 (SemiBold)</option>
+                    <option value="700">700 (Bold)</option>
+                    <option value="800">800 (Extra Bold)</option>
+                    <option value="900" selected>900 (Black)</option>
+                </select>
+            </div>
+            
+            <div class="control-group">
+                <label for="noiseFactor">Noise Factor: <span id="noiseFactorValue">1.0</span></label>
+                <input type="range" id="noiseFactor" min="0" max="2" step="0.1" value="1">
+            </div>
+            
+            <div class="control-group">
+                <label for="noiseScale">Noise Scale: <span id="noiseScaleValue">0.0005</span></label>
+                <input type="range" id="noiseScale" min="0" max="0.001" step="0.0001" value="0.0005">
+            </div>
+            
+            <div class="control-group">
+                <label for="rgbPersist">RGB Persist: <span id="rgbPersistValue">0.98</span></label>
+                <input type="range" id="rgbPersist" min="0.9" max="0.999" step="0.001" value="0.98">
+            </div>
+            
+            <div class="control-group">
+                <label for="alphaPersist">Alpha Persist: <span id="alphaPersistValue">0.95</span></label>
+                <input type="range" id="alphaPersist" min="0.9" max="0.999" step="0.001" value="0.95">
+            </div>
+            
+            <div class="control-group">
+                <label for="textColor">Text Color</label>
+                <input type="color" id="textColor" value="#ffffff">
+            </div>
+            
+            <div class="control-group">
+                <label for="backgroundColor">Background Color</label>
+                <input type="color" id="backgroundColor" value="#151515">
+            </div>
+            
+            <div class="control-group">
+                <label for="supersample">Supersample: <span id="supersampleValue">2</span></label>
+                <input type="range" id="supersample" min="1" max="4" step="1" value="2">
+            </div>
+            
+            <div class="control-group">
+                <div class="checkbox-group">
+                    <input type="checkbox" id="animateColor" checked>
+                    <label for="animateColor">Animate Color</label>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="colorCycle" checked>
+                    <label for="colorCycle">Color Cycle</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class TextTrailEffect {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d', { alpha: true });
+                this.textDisplay = document.getElementById('text-display');
+                this.container = document.getElementById('container');
+                this.loading = document.querySelector('.loading');
+                
+                // State
+                this.state = {
+                    text: 'Vibe',
+                    fontFamily: 'Figtree',
+                    fontWeight: '900',
+                    noiseFactor: 1.0,
+                    noiseScale: 0.0005,
+                    rgbPersistFactor: 0.98,
+                    alphaPersistFactor: 0.95,
+                    animateColor: true,
+                    textColor: [1, 1, 1],
+                    backgroundColor: [0.082, 0.082, 0.082],
+                    supersample: 2,
+                    colorCycleInterval: 3000,
+                    mousePos: [0, 0],
+                    targetMouse: [0, 0]
+                };
+                
+                // Buffers
+                this.buffers = [];
+                this.currentBuffer = 0;
+                this.bufferCount = 2;
+                
+                // Animation
+                this.animationId = null;
+                this.lastTime = 0;
+                this.time = 0;
+                
+                // Color animation
+                this.targetColor = [...this.state.textColor];
+                this.colorTimer = null;
+                
+                // Simplex noise (simplified version)
+                this.simplex = this.createSimplexNoise();
+                
+                // Initialize
+                this.init();
+                this.bindEvents();
+            }
+            
+            init() {
+                this.resize();
+                this.createBuffers();
+                this.startAnimation();
+                this.setupColorCycle();
+                
+                // Hide loading
+                setTimeout(() => {
+                    this.loading.classList.add('hidden');
+                }, 500);
+                
+                // Update text display
+                this.updateTextDisplay();
+            }
+            
+            resize() {
+                const dpr = window.devicePixelRatio || 1;
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                
+                this.canvas.width = width * dpr * this.state.supersample;
+                this.canvas.height = height * dpr * this.state.supersample;
+                this.canvas.style.width = `${width}px`;
+                this.canvas.style.height = `${height}px`;
+                
+                this.ctx.scale(dpr * this.state.supersample, dpr * this.state.supersample);
+                
+                // Update buffers
+                if (this.buffers.length > 0) {
+                    this.buffers.forEach(buffer => {
+                        buffer.width = width;
+                        buffer.height = height;
+                    });
+                }
+            }
+            
+            createBuffers() {
+                this.buffers = [];
+                const width = this.container.clientWidth;
+                const height = this.container.clientHeight;
+                
+                for (let i = 0; i < this.bufferCount; i++) {
+                    const buffer = document.createElement('canvas');
+                    buffer.width = width;
+                    buffer.height = height;
+                    this.buffers.push(buffer);
+                }
+            }
+            
+            createSimplexNoise() {
+                // Simplified Simplex noise implementation
+                const grad3 = [
+                    [1,1,0], [-1,1,0], [1,-1,0], [-1,-1,0],
+                    [1,0,1], [-1,0,1], [1,0,-1], [-1,0,-1],
+                    [0,1,1], [0,-1,1], [0,1,-1], [0,-1,-1]
+                ];
+                
+                const p = [];
+                for (let i = 0; i < 256; i++) {
+                    p[i] = Math.floor(Math.random() * 256);
+                }
+                
+                const perm = new Array(512);
+                for (let i = 0; i < 512; i++) {
+                    perm[i] = p[i & 255];
+                }
+                
+                return {
+                    noise3D: function(xin, yin, zin) {
+                        const F3 = 1.0/3.0;
+                        const G3 = 1.0/6.0;
+                        
+                        let s = (xin + yin + zin) * F3;
+                        let i = Math.floor(xin + s);
+                        let j = Math.floor(yin + s);
+                        let k = Math.floor(zin + s);
+                        
+                        let t = (i + j + k) * G3;
+                        let X0 = i - t;
+                        let Y0 = j - t;
+                        let Z0 = k - t;
+                        
+                        let x0 = xin - X0;
+                        let y0 = yin - Y0;
+                        let z0 = zin - Z0;
+                        
+                        let i1, j1, k1;
+                        let i2, j2, k2;
+                        
+                        if (x0 >= y0) {
+                            if (y0 >= z0) {
+                                i1=1; j1=0; k1=0; i2=1; j2=1; k2=0;
+                            } else if (x0 >= z0) {
+                                i1=1; j1=0; k1=0; i2=1; j2=0; k2=1;
+                            } else {
+                                i1=0; j1=0; k1=1; i2=1; j2=0; k2=1;
+                            }
+                        } else {
+                            if (y0 < z0) {
+                                i1=0; j1=0; k1=1; i2=0; j2=1; k2=1;
+                            } else if (x0 < z0) {
+                                i1=0; j1=1; k1=0; i2=0; j2=1; k2=1;
+                            } else {
+                                i1=0; j1=1; k1=0; i2=1; j2=1; k2=0;
+                            }
+                        }
+                        
+                        let x1 = x0 - i1 + G3;
+                        let y1 = y0 - j1 + G3;
+                        let z1 = z0 - k1 + G3;
+                        let x2 = x0 - i2 + 2.0*G3;
+                        let y2 = y0 - j2 + 2.0*G3;
+                        let z2 = z0 - k2 + 2.0*G3;
+                        let x3 = x0 - 1.0 + 3.0*G3;
+                        let y3 = y0 - 1.0 + 3.0*G3;
+                        let z3 = z0 - 1.0 + 3.0*G3;
+                        
+                        let ii = i & 255;
+                        let jj = j & 255;
+                        let kk = k & 255;
+                        
+                        let gi0 = perm[ii + perm[jj + perm[kk]]] % 12;
+                        let gi1 = perm[ii + i1 + perm[jj + j1 + perm[kk + k1]]] % 12;
+                        let gi2 = perm[ii + i2 + perm[jj + j2 + perm[kk + k2]]] % 12;
+                        let gi3 = perm[ii + 1 + perm[jj + 1 + perm[kk + 1]]] % 12;
+                        
+                        let t0 = 0.6 - x0*x0 - y0*y0 - z0*z0;
+                        let n0 = t0 < 0 ? 0.0 : Math.pow(t0, 4) * this.dot(grad3[gi0], [x0, y0, z0]);
+                        
+                        let t1 = 0.6 - x1*x1 - y1*y1 - z1*z1;
+                        let n1 = t1 < 0 ? 0.0 : Math.pow(t1, 4) * this.dot(grad3[gi1], [x1, y1, z1]);
+                        
+                        let t2 = 0.6 - x2*x2 - y2*y2 - z2*z2;
+                        let n2 = t2 < 0 ? 0.0 : Math.pow(t2, 4) * this.dot(grad3[gi2], [x2, y2, z2]);
+                        
+                        let t3 = 0.6 - x3*x3 - y3*y3 - z3*z3;
+                        let n3 = t3 < 0 ? 0.0 : Math.pow(t3, 4) * this.dot(grad3[gi3], [x3, y3, z3]);
+                        
+                        return 32.0 * (n0 + n1 + n2 + n3);
+                    },
+                    dot: function(g, x) {
+                        return g[0]*x[0] + g[1]*x[1] + g[2]*x[2];
+                    }
+                };
+            }
+            
+            drawTextToBuffer() {
+                const buffer = this.buffers[0];
+                const ctx = buffer.getContext('2d');
+                
+                // Clear buffer
+                ctx.clearRect(0, 0, buffer.width, buffer.height);
+                
+                // Set font
+                const fontSize = Math.min(buffer.width, buffer.height) * 0.15;
+                ctx.font = `${this.state.fontWeight} ${fontSize}px "${this.state.fontFamily}"`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillStyle = 'white';
+                
+                // Draw text with multiple passes for soft edges
+                const passes = 9;
+                const offset = fontSize * 0.002;
+                const offsets = [
+                    [0, 0],
+                    [offset, 0],
+                    [-offset, 0],
+                    [0, offset],
+                    [0, -offset],
+                    [offset, offset],
+                    [-offset, -offset],
+                    [offset, -offset],
+                    [-offset, offset]
+                ];
+                
+                ctx.globalAlpha = 1 / passes;
+                offsets.forEach(([dx, dy]) => {
+                    ctx.fillText(
+                        this.state.text,
+                        buffer.width / 2 + dx,
+                        buffer.height / 2 + dy
+                    );
+                });
+                ctx.globalAlpha = 1;
+                
+                // Store the text buffer
+                this.textBuffer = buffer;
+            }
+            
+            applyPersistEffect(sourceCtx, targetCtx, width, height, time, mouseX, mouseY) {
+                const imageData = sourceCtx.getImageData(0, 0, width, height);
+                const data = imageData.data;
+                
+                for (let y = 0; y < height; y++) {
+                    for (let x = 0; x < width; x++) {
+                        const idx = (y * width + x) * 4;
+                        
+                        // Calculate noise offset
+                        const nx = x * this.state.noiseFactor;
+                        const ny = y * this.state.noiseFactor;
+                        const nz = time * 0.1;
+                        
+                        const noiseA = this.simplex.noise3D(nx, ny, nz) * this.state.noiseScale;
+                        const noiseB = this.simplex.noise3D(nx, ny, nz + 100) * this.state.noiseScale;
+                        
+                        // Apply mouse influence
+                        const mx = mouseX * 0.005;
+                        const my = mouseY * 0.005;
+                        
+                        // Sample from source with noise and mouse offset
+                        const sx = Math.max(0, Math.min(width - 1, Math.floor(x + noiseA + mx)));
+                        const sy = Math.max(0, Math.min(height - 1, Math.floor(y + noiseB + my)));
+                        
+                        const sidx = (sy * width + sx) * 4;
+                        
+                        // Apply persistence
+                        data[idx]     = data[sidx]     * this.state.rgbPersistFactor;
+                        data[idx + 1] = data[sidx + 1] * this.state.rgbPersistFactor;
+                        data[idx + 2] = data[sidx + 2] * this.state.rgbPersistFactor;
+                        data[idx + 3] = data[sidx + 3] * this.state.alphaPersistFactor;
+                    }
+                }
+                
+                targetCtx.putImageData(imageData, 0, 0);
+            }
+            
+            render(time) {
+                if (!this.lastTime) this.lastTime = time;
+                const deltaTime = (time - this.lastTime) / 1000;
+                this.lastTime = time;
+                this.time += deltaTime;
+                
+                // Update mouse position with smoothing
+                const mouseSpeed = deltaTime * 5;
+                this.state.mousePos[0] += (this.state.targetMouse[0] - this.state.mousePos[0]) * mouseSpeed;
+                this.state.mousePos[1] += (this.state.targetMouse[1] - this.state.mousePos[1]) * mouseSpeed;
+                
+                // Update color animation
+                if (this.state.animateColor) {
+                    const colorSpeed = deltaTime * 2;
+                    for (let i = 0; i < 3; i++) {
+                        this.state.textColor[i] += (this.targetColor[i] - this.state.textColor[i]) * colorSpeed;
+                    }
+                }
+                
+                const width = this.canvas.width / (window.devicePixelRatio * this.state.supersample);
+                const height = this.canvas.height / (window.devicePixelRatio * this.state.supersample);
+                
+                // Get current and next buffer
+                const currentBuffer = this.buffers[this.currentBuffer];
+                const nextBuffer = this.buffers[(this.currentBuffer + 1) % this.bufferCount];
+                
+                // Apply persist effect
+                this.applyPersistEffect(
+                    currentBuffer.getContext('2d'),
+                    nextBuffer.getContext('2d'),
+                    width,
+                    height,
+                    this.time,
+                    this.state.mousePos[0],
+                    this.state.mousePos[1]
+                );
+                
+                // Draw to main canvas
+                this.ctx.clearRect(0, 0, width, height);
+                
+                // Draw background
+                this.ctx.fillStyle = `rgb(${Math.floor(this.state.backgroundColor[0] * 255)}, ${Math.floor(this.state.backgroundColor[1] * 255)}, ${Math.floor(this.state.backgroundColor[2] * 255)})`;
+                this.ctx.fillRect(0, 0, width, height);
+                
+                // Draw persisted buffer
+                this.ctx.drawImage(nextBuffer, 0, 0);
+                
+                // Draw text with current color
+                const textCtx = currentBuffer.getContext('2d');
+                textCtx.clearRect(0, 0, width, height);
+                
+                const fontSize = Math.min(width, height) * 0.15;
+                textCtx.font = `${this.state.fontWeight} ${fontSize}px "${this.state.fontFamily}"`;
+                textCtx.textAlign = 'center';
+                textCtx.textBaseline = 'middle';
+                textCtx.fillStyle = `rgb(${Math.floor(this.state.textColor[0] * 255)}, ${Math.floor(this.state.textColor[1] * 255)}, ${Math.floor(this.state.textColor[2] * 255)})`;
+                textCtx.fillText(this.state.text, width / 2, height / 2);
+                
+                // Swap buffers
+                this.currentBuffer = (this.currentBuffer + 1) % this.bufferCount;
+                
+                this.animationId = requestAnimationFrame((t) => this.render(t));
+            }
+            
+            startAnimation() {
+                this.drawTextToBuffer();
+                this.animationId = requestAnimationFrame((t) => this.render(t));
+            }
+            
+            setupColorCycle() {
+                if (this.colorTimer) {
+                    clearInterval(this.colorTimer);
+                }
+                
+                this.colorTimer = setInterval(() => {
+                    if (this.state.animateColor) {
+                        this.targetColor = [
+                            Math.random(),
+                            Math.random(),
+                            Math.random()
+                        ];
+                    }
+                }, this.state.colorCycleInterval);
+            }
+            
+            hexToRgb(hex) {
+                const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+                return result ? [
+                    parseInt(result[1], 16) / 255,
+                    parseInt(result[2], 16) / 255,
+                    parseInt(result[3], 16) / 255
+                ] : [1, 1, 1];
+            }
+            
+            updateTextDisplay() {
+                this.textDisplay.textContent = this.state.text;
+                this.textDisplay.style.fontFamily = `"${this.state.fontFamily}"`;
+                this.textDisplay.style.fontWeight = this.state.fontWeight;
+                this.textDisplay.style.color = `rgb(${Math.floor(this.state.textColor[0] * 255)}, ${Math.floor(this.state.textColor[1] * 255)}, ${Math.floor(this.state.textColor[2] * 255)})`;
+            }
+            
+            bindEvents() {
+                // Mouse move
+                this.container.addEventListener('mousemove', (e) => {
+                    const rect = this.container.getBoundingClientRect();
+                    const x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+                    const y = ((rect.top + rect.height - e.clientY) / rect.height) * 2 - 1;
+                    this.state.targetMouse = [x, y];
+                });
+                
+                // Touch move
+                this.container.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const rect = this.container.getBoundingClientRect();
+                    const touch = e.touches[0];
+                    const x = ((touch.clientX - rect.left) / rect.width) * 2 - 1;
+                    const y = ((rect.top + rect.height - touch.clientY) / rect.height) * 2 - 1;
+                    this.state.targetMouse = [x, y];
+                }, { passive: false });
+                
+                // Resize
+                window.addEventListener('resize', () => {
+                    this.resize();
+                    this.drawTextToBuffer();
+                });
+                
+                // Control bindings
+                document.getElementById('textInput').addEventListener('input', (e) => {
+                    this.state.text = e.target.value || 'Vibe';
+                    this.updateTextDisplay();
+                    this.drawTextToBuffer();
+                });
+                
+                document.getElementById('fontFamily').addEventListener('change', (e) => {
+                    this.state.fontFamily = e.target.value;
+                    this.updateTextDisplay();
+                    this.drawTextToBuffer();
+                });
+                
+                document.getElementById('fontWeight').addEventListener('change', (e) => {
+                    this.state.fontWeight = e.target.value;
+                    this.updateTextDisplay();
+                    this.drawTextToBuffer();
+                });
+                
+                document.getElementById('noiseFactor').addEventListener('input', (e) => {
+                    this.state.noiseFactor = parseFloat(e.target.value);
+                    document.getElementById('noiseFactorValue').textContent = this.state.noiseFactor.toFixed(1);
+                });
+                
+                document.getElementById('noiseScale').addEventListener('input', (e) => {
+                    this.state.noiseScale = parseFloat(e.target.value);
+                    document.getElementById('noiseScaleValue').textContent = this.state.noiseScale.toFixed(4);
+                });
+                
+                document.getElementById('rgbPersist').addEventListener('input', (e) => {
+                    this.state.rgbPersistFactor = parseFloat(e.target.value);
+                    document.getElementById('rgbPersistValue').textContent = this.state.rgbPersistFactor.toFixed(3);
+                });
+                
+                document.getElementById('alphaPersist').addEventListener('input', (e) => {
+                    this.state.alphaPersistFactor = parseFloat(e.target.value);
+                    document.getElementById('alphaPersistValue').textContent = this.state.alphaPersistFactor.toFixed(3);
+                });
+                
+                document.getElementById('textColor').addEventListener('input', (e) => {
+                    const rgb = this.hexToRgb(e.target.value);
+                    this.state.textColor = rgb;
+                    this.targetColor = [...rgb];
+                    this.updateTextDisplay();
+                });
+                
+                document.getElementById('backgroundColor').addEventListener('input', (e) => {
+                    this.state.backgroundColor = this.hexToRgb(e.target.value);
+                    this.container.style.backgroundColor = e.target.value;
+                });
+                
+                document.getElementById('supersample').addEventListener('input', (e) => {
+                    this.state.supersample = parseInt(e.target.value);
+                    document.getElementById('supersampleValue').textContent = this.state.supersample;
+                    this.resize();
+                    this.drawTextToBuffer();
+                });
+                
+                document.getElementById('animateColor').addEventListener('change', (e) => {
+                    this.state.animateColor = e.target.checked;
+                    if (this.state.animateColor && document.getElementById('colorCycle').checked) {
+                        this.setupColorCycle();
+                    }
+                });
+                
+                document.getElementById('colorCycle').addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        this.setupColorCycle();
+                    } else {
+                        clearInterval(this.colorTimer);
+                        this.colorTimer = null;
+                    }
+                });
+                
+                // Initialize control values
+                document.getElementById('noiseFactorValue').textContent = this.state.noiseFactor.toFixed(1);
+                document.getElementById('noiseScaleValue').textContent = this.state.noiseScale.toFixed(4);
+                document.getElementById('rgbPersistValue').textContent = this.state.rgbPersistFactor.toFixed(3);
+                document.getElementById('alphaPersistValue').textContent = this.state.alphaPersistFactor.toFixed(3);
+                document.getElementById('supersampleValue').textContent = this.state.supersample;
+            }
+            
+            destroy() {
+                if (this.animationId) {
+                    cancelAnimationFrame(this.animationId);
+                }
+                if (this.colorTimer) {
+                    clearInterval(this.colorTimer);
+                }
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const effect = new TextTrailEffect();
+            
+            // Cleanup on page unload
+            window.addEventListener('beforeunload', () => {
+                effect.destroy();
+            });
+        });
+    </script>
+</body>
+</html>

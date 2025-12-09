@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Curved Loop Marquee</title>
+  <link rel="stylesheet" href="curved_loop.css">
+</head>
+<body>
+
+<div id="loop-container">
+  <svg viewBox="0 0 1440 200">
+    <defs>
+      <path id="curvePath" d="M-100,60 Q500,460 1540,60" />
+    </defs>
+
+    <text id="measureText"></text>
+
+    <text id="mainText">
+      <textPath id="textPath" href="#curvePath"></textPath>
+    </text>
+  </svg>
+</div>
+
+<script src="curved_loop.js"></script>
+</body>
+</html>

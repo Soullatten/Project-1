@@ -1,0 +1,44 @@
+@keyframes shine {
+  0% {
+    background-position: 100%;
+  }
+  100% {
+    background-position: -100%;
+  }
+}
+
+.animate-shine {
+  animation: shine linear infinite;
+}
+
+/* This matches your Vue inline styles exactly */
+.shiny-text {
+  color: #ffffff50s;
+  display: inline-block;
+
+  background-image: linear-gradient(
+    120deg, 
+    rgba(45, 40, 40, 0.6) 40%, 
+    rgba(255, 255, 255, 0.8) 50%, 
+    rgba(29, 28, 28, 0.72) 60%
+  );
+  
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #191818b9;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+}

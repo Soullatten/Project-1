@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Tilt Card Effect</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a1a 100%);
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            opacity: 0.8;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .demo-container {
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 40px;
+            margin: 40px auto;
+            max-width: 1000px;
+        }
+
+        @media (max-width: 768px) {
+            .demo-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card-wrapper {
+            position: relative;
+            width: 300px;
+            height: 400px;
+            perspective: 800px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .mobile-warning {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: #ff6b6b;
+            background: rgba(255, 107, 107, 0.1);
+            padding: 8px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-warning {
+                display: block;
+            }
+        }
+
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            will-change: transform;
+        }
+
+        .card-image {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 15px;
+            transform: translateZ(0);
+            will-change: transform;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .card-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            transform: translateZ(30px);
+            pointer-events: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .overlay-content {
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .tooltip {
+            position: absolute;
+            left: 0;
+            top: 0;
+            border-radius: 4px;
+            background: white;
+            padding: 6px 12px;
+            font-size: 10px;
+            color: #2d2d2d;
+            opacity: 0;
+            z-index: 3;
+            pointer-events: none;
+            white-space: nowrap;
+            transform-origin: bottom center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .controls-panel {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 25px;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4ecdc4;
+            font-size: 0.9rem;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            -webkit-appearance: none;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4ecdc4;
+            cursor: pointer;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #45b7d1;
+            transform: scale(1.2);
+        }
+
+        .range-value {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 5px;
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+
+        .value-display {
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 30px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(255, 255, 255, 0.1);
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #4ecdc4;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(30px);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 30px;
+        }
+
+        .action-btn {
+            flex: 1;
+            padding: 15px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s;
+            border: none;
+            color: white;
+        }
+
+        .reset-btn {
+            background: rgba(255, 107, 107, 0.2);
+            border: 1px solid rgba(255, 107, 107, 0.3);
+        }
+
+        .reset-btn:hover {
+            background: rgba(255, 107, 107, 0.3);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.2);
+        }
+
+        .image-selector {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .image-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            overflow: hidden;
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: all 0.3s;
+        }
+
+        .image-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .image-btn.active {
+            border-color: #4ecdc4;
+            box-shadow: 0 0 20px rgba(78, 205, 196, 0.3);
+        }
+
+        .image-btn img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .image-url-input {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            margin-top: 10px;
+            font-size: 0.9rem;
+        }
+
+        .image-url-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px 25px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 120px;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #ff6b6b, #4ecdc4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            opacity: 0.8;
+        }
+
+        .info {
+            text-align: center;
+            margin-top: 40px;
+            opacity: 0.7;
+            font-size: 0.9rem;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .example-overlays {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .overlay-example {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .overlay-example:hover {
+            background: rgba(78, 205, 196, 0.1);
+            border-color: #4ecdc4;
+            transform: translateY(-2px);
+        }
+
+        .overlay-title {
+            color: #4ecdc4;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .overlay-description {
+            font-size: 0.9rem;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>3D Tilt Card Effect</h1>
+            <p class="subtitle">Move your mouse over the card to see the 3D tilt effect. Customize the settings below.</p>
+        </header>
+
+        <div class="demo-container">
+            <div class="card-wrapper" id="cardWrapper">
+                <div class="mobile-warning">This effect is not optimized for mobile. Check on desktop.</div>
+                
+                <div class="card-inner" id="cardInner">
+                    <img src="https://images.unsplash.com/photo-1543857778-c4a1a569e388?w=600&h=800&fit=crop&crop=center" 
+                         alt="Portrait" class="card-image" id="cardImage">
+                    
+                    <div class="card-overlay" id="cardOverlay" style="display: none;">
+                        <div class="overlay-content">
+                            <h3>Custom Overlay</h3>
+                            <p>This content appears in 3D space</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tooltip" id="tooltip">Hover over the card</div>
+            </div>
+
+            <div class="controls-panel">
+                <div class="controls-grid">
+                    <div class="control-group">
+                        <label for="rotateAmplitude">Rotation Amplitude: <span id="rotateAmplitudeValue" class="value-display">14°</span></label>
+                        <input type="range" id="rotateAmplitude" min="1" max="30" value="14" step="1">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="scaleOnHover">Scale on Hover: <span id="scaleOnHoverValue" class="value-display">1.1</span></label>
+                        <input type="range" id="scaleOnHover" min="1" max="2" value="1.1" step="0.05">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="springStiffness">Spring Stiffness: <span id="springStiffnessValue" class="value-display">100</span></label>
+                        <input type="range" id="springStiffness" min="50" max="200" value="100" step="10">
+                    </div>
+
+                    <div class="control-group">
+                        <label for="springDamping">Spring Damping: <span id="springDampingValue" class="value-display">30</span></label>
+                        <input type="range" id="springDamping" min="10" max="100" value="30" step="5">
+                    </div>
+
+                    <div class="control-group">
+                        <label>Tooltip Settings</label>
+                        <div class="toggle-group">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showTooltip" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>Show Tooltip</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Overlay Settings</label>
+                        <div class="toggle-group">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showOverlay">
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>Show Overlay</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Mobile Warning</label>
+                        <div class="toggle-group">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="showMobileWarning" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                            <span>Show Warning</span>
+                        </div>
+                    </div>
+
+                    <div class="control-group">
+                        <label>Card Image</label>
+                        <div class="image-selector">
+                            <div class="image-btn active" data-image="portrait">
+                                <img src="https://images.unsplash.com/photo-1543857778-c4a1a569e388?w=150&h=200&fit=crop&crop=center" alt="Portrait">
+                            </div>
+                            <div class="image-btn" data-image="landscape">
+                                <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=150&h=200&fit=crop&crop=center" alt="Landscape">
+                            </div>
+                            <div class="image-btn" data-image="abstract">
+                                <img src="https://images.unsplash.com/photo-1518834103325-6725c4b54c14?w=150&h=200&fit=crop&crop=center" alt="Abstract">
+                            </div>
+                        </div>
+                        <input type="text" class="image-url-input" id="imageUrlInput" placeholder="Or paste image URL...">
+                    </div>
+                </div>
+
+                <div class="example-overlays">
+                    <div class="overlay-example" data-overlay="info">
+                        <div class="overlay-title">Info Card</div>
+                        <div class="overlay-description">Simple info overlay</div>
+                    </div>
+                    <div class="overlay-example" data-overlay="social">
+                        <div class="overlay-title">Social Media</div>
+                        <div class="overlay-description">Share buttons overlay</div>
+                    </div>
+                    <div class="overlay-example" data-overlay="product">
+                        <div class="overlay-title">Product Info</div>
+                        <div class="overlay-description">Product details overlay</div>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button class="action-btn reset-btn" id="resetBtn">Reset to Default</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-value" id="rotationX">0°</div>
+                <div class="stat-label">X Rotation</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="rotationY">0°</div>
+                <div class="stat-label">Y Rotation</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="currentScale">1.00</div>
+                <div class="stat-label">Current Scale</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value" id="tooltipAngle">0°</div>
+                <div class="stat-label">Tooltip Angle</div>
+            </div>
+        </div>
+
+        <div class="info">
+            <p>The card uses CSS 3D transforms with smooth spring physics for natural movement.</p>
+            <p>Adjust the spring settings to change how quickly the card responds to mouse movement.</p>
+        </div>
+    </div>
+
+    <script>
+        class TiltedCardEffect {
+            constructor() {
+                this.cardWrapper = document.getElementById('cardWrapper');
+                this.cardInner = document.getElementById('cardInner');
+                this.cardImage = document.getElementById('cardImage');
+                this.tooltip = document.getElementById('tooltip');
+                this.cardOverlay = document.getElementById('cardOverlay');
+                
+                // Parameters with defaults
+                this.params = {
+                    rotateAmplitude: 14,
+                    scaleOnHover: 1.1,
+                    springStiffness: 100,
+                    springDamping: 30,
+                    mass: 2,
+                    showTooltip: true,
+                    showOverlay: false,
+                    showMobileWarning: true,
+                    tooltipText: 'Hover over the card'
+                };
+                
+                // Current state
+                this.state = {
+                    rotateX: 0,
+                    rotateY: 0,
+                    scale: 1,
+                    targetX: 0,
+                    targetY: 0,
+                    targetScale: 1,
+                    velocityX: 0,
+                    velocityY: 0,
+                    velocityScale: 0,
+                    isHovering: false,
+                    mouseX: 0,
+                    mouseY: 0,
+                    lastY: 0,
+                    tooltipAngle: 0,
+                    tooltipOpacity: 0
+                };
+                
+                this.animationId = null;
+                this.lastTime = 0;
+                this.bindControls();
+                this.setupEventListeners();
+                this.updateStats();
+                this.animate();
+            }
+            
+            bindControls() {
+                // Rotation Amplitude
+                const rotateAmplitude = document.getElementById('rotateAmplitude');
+                const rotateAmplitudeValue = document.getElementById('rotateAmplitudeValue');
+                rotateAmplitude.addEventListener('input', (e) => {
+                    this.params.rotateAmplitude = parseInt(e.target.value);
+                    rotateAmplitudeValue.textContent = `${this.params.rotateAmplitude}°`;
+                });
+                
+                // Scale on Hover
+                const scaleOnHover = document.getElementById('scaleOnHover');
+                const scaleOnHoverValue = document.getElementById('scaleOnHoverValue');
+                scaleOnHover.addEventListener('input', (e) => {
+                    this.params.scaleOnHover = parseFloat(e.target.value);
+                    scaleOnHoverValue.textContent = this.params.scaleOnHover.toFixed(2);
+                    this.state.targetScale = this.state.isHovering ? this.params.scaleOnHover : 1;
+                });
+                
+                // Spring Stiffness
+                const springStiffness = document.getElementById('springStiffness');
+                const springStiffnessValue = document.getElementById('springStiffnessValue');
+                springStiffness.addEventListener('input', (e) => {
+                    this.params.springStiffness = parseInt(e.target.value);
+                    springStiffnessValue.textContent = this.params.springStiffness;
+                });
+                
+                // Spring Damping
+                const springDamping = document.getElementById('springDamping');
+                const springDampingValue = document.getElementById('springDampingValue');
+                springDamping.addEventListener('input', (e) => {
+                    this.params.springDamping = parseInt(e.target.value);
+                    springDampingValue.textContent = this.params.springDamping;
+                });
+                
+                // Show Tooltip
+                const showTooltip = document.getElementById('showTooltip');
+                showTooltip.addEventListener('change', (e) => {
+                    this.params.showTooltip = e.target.checked;
+                    this.tooltip.style.display = this.params.showTooltip ? 'block' : 'none';
+                });
+                
+                // Show Overlay
+                const showOverlay = document.getElementById('showOverlay');
+                showOverlay.addEventListener('change', (e) => {
+                    this.params.showOverlay = e.target.checked;
+                    this.cardOverlay.style.display = this.params.showOverlay ? 'flex' : 'none';
+                });
+                
+                // Show Mobile Warning
+                const showMobileWarning = document.getElementById('showMobileWarning');
+                const mobileWarning = document.querySelector('.mobile-warning');
+                showMobileWarning.addEventListener('change', (e) => {
+                    this.params.showMobileWarning = e.target.checked;
+                    mobileWarning.style.display = this.params.showMobileWarning && window.innerWidth <= 768 ? 'block' : 'none';
+                });
+                
+                // Image selection
+                document.querySelectorAll('.image-btn').forEach(btn => {
+                    btn.addEventListener('click', (e) => {
+                        const imageType = e.currentTarget.dataset.image;
+                        const images = {
+                            portrait: 'https://images.unsplash.com/photo-1543857778-c4a1a569e388?w=600&h=800&fit=crop&crop=center',
+                            landscape: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=600&h=800&fit=crop&crop=center',
+                            abstract: 'https://images.unsplash.com/photo-1518834103325-6725c4b54c14?w=600&h=800&fit=crop&crop=center'
+                        };
+                        
+                        this.cardImage.src = images[imageType];
+                        this.params.tooltipText = `${imageType.charAt(0).toUpperCase() + imageType.slice(1)} image`;
+                        
+                        document.querySelectorAll('.image-btn').forEach(b => b.classList.remove('active'));
+                        e.currentTarget.classList.add('active');
+                    });
+                });
+                
+                // Image URL input
+                const imageUrlInput = document.getElementById('imageUrlInput');
+                imageUrlInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        this.cardImage.src = e.target.value;
+                        e.target.value = '';
+                        this.params.tooltipText = 'Custom image';
+                    }
+                });
+                
+                // Overlay examples
+                document.querySelectorAll('.overlay-example').forEach(example => {
+                    example.addEventListener('click', (e) => {
+                        const overlayType = e.currentTarget.dataset.overlay;
+                        const overlays = {
+                            info: {
+                                title: 'Info Card',
+                                content: 'This is an information overlay that appears in 3D space.'
+                            },
+                            social: {
+                                title: 'Social Media',
+                                content: 'Share buttons: Twitter, Facebook, Instagram'
+                            },
+                            product: {
+                                title: 'Product Info',
+                                content: 'Product details and pricing information'
+                            }
+                        };
+                        
+                        const overlay = overlays[overlayType];
+                        this.cardOverlay.innerHTML = `
+                            <div class="overlay-content">
+                                <h3>${overlay.title}</h3>
+                                <p>${overlay.content}</p>
+                                <div style="margin-top: 10px; font-size: 0.8rem; opacity: 0.7;">Click "Show Overlay" above</div>
+                            </div>
+                        `;
+                        
+                        // Auto-enable overlay
+                        showOverlay.checked = true;
+                        this.params.showOverlay = true;
+                        this.cardOverlay.style.display = 'flex';
+                    });
+                });
+                
+                // Reset button
+                document.getElementById('resetBtn').addEventListener('click', () => {
+                    this.resetToDefault();
+                });
+            }
+            
+            setupEventListeners() {
+                // Mouse events
+                this.cardWrapper.addEventListener('mousemove', (e) => {
+                    this.handleMouseMove(e);
+                });
+                
+                this.cardWrapper.addEventListener('mouseenter', () => {
+                    this.handleMouseEnter();
+                });
+                
+                this.cardWrapper.addEventListener('mouseleave', () => {
+                    this.handleMouseLeave();
+                });
+                
+                // Touch events for mobile
+                this.cardWrapper.addEventListener('touchmove', (e) => {
+                    e.preventDefault();
+                    const touch = e.touches[0];
+                    this.handleMouseMove(touch);
+                });
+                
+                // Window resize for mobile warning
+                window.addEventListener('resize', () => {
+                    const mobileWarning = document.querySelector('.mobile-warning');
+                    const showMobileWarning = document.getElementById('showMobileWarning');
+                    if (showMobileWarning.checked) {
+                        mobileWarning.style.display = window.innerWidth <= 768 ? 'block' : 'none';
+                    }
+                });
+            }
+            
+            handleMouseMove(e) {
+                const rect = this.cardWrapper.getBoundingClientRect();
+                const offsetX = e.clientX - rect.left - rect.width / 2;
+                const offsetY = e.clientY - rect.top - rect.height / 2;
+                
+                // Calculate target rotation
+                const rotationX = (offsetY / (rect.height / 2)) * -this.params.rotateAmplitude;
+                const rotationY = (offsetX / (rect.width / 2)) * this.params.rotateAmplitude;
+                
+                this.state.targetX = rotationX;
+                this.state.targetY = rotationY;
+                
+                // Update mouse position for tooltip
+                this.state.mouseX = e.clientX - rect.left;
+                this.state.mouseY = e.clientY - rect.top;
+                
+                // Calculate tooltip rotation based on vertical velocity
+                const velocityY = offsetY - this.state.lastY;
+                this.state.tooltipAngle = -velocityY * 0.6;
+                this.state.lastY = offsetY;
+                
+                // Update tooltip position
+                this.updateTooltip();
+            }
+            
+            handleMouseEnter() {
+                this.state.isHovering = true;
+                this.state.targetScale = this.params.scaleOnHover;
+                this.state.tooltipOpacity = 1;
+                this.params.tooltipText = 'Drake';
+                
+                // Update tooltip text
+                this.tooltip.textContent = this.params.tooltipText;
+            }
+            
+            handleMouseLeave() {
+                this.state.isHovering = false;
+                this.state.targetX = 0;
+                this.state.targetY = 0;
+                this.state.targetScale = 1;
+                this.state.tooltipOpacity = 0;
+                this.state.tooltipAngle = 0;
+                
+                // Reset tooltip position
+                this.tooltip.style.transform = `translate(${this.state.mouseX}px, ${this.state.mouseY}px) rotate(0deg)`;
+            }
+            
+            updateTooltip() {
+                if (!this.params.showTooltip) return;
+                
+                this.tooltip.style.left = `${this.state.mouseX}px`;
+                this.tooltip.style.top = `${this.state.mouseY}px`;
+                this.tooltip.style.transform = `translate(-50%, -100%) rotate(${this.state.tooltipAngle}deg)`;
+                this.tooltip.style.opacity = this.state.tooltipOpacity;
+                
+                // Update stats
+                document.getElementById('tooltipAngle').textContent = `${Math.round(this.state.tooltipAngle)}°`;
+            }
+            
+            springPhysics(deltaTime) {
+                const dt = deltaTime / 1000; // Convert to seconds
+                
+                // Convert angles to radians for calculations
+                const targetXRot = this.state.targetX * Math.PI / 180;
+                const targetYRot = this.state.targetY * Math.PI / 180;
+                const currentXRot = this.state.rotateX * Math.PI / 180;
+                const currentYRot = this.state.rotateY * Math.PI / 180;
+                
+                // Calculate spring forces
+                const forceX = (targetXRot - currentXRot) * this.params.springStiffness;
+                const forceY = (targetYRot - currentYRot) * this.params.springStiffness;
+                const forceScale = (this.state.targetScale - this.state.scale) * this.params.springStiffness;
+                
+                // Apply damping
+                const dampingX = -this.state.velocityX * this.params.springDamping;
+                const dampingY = -this.state.velocityY * this.params.springDamping;
+                const dampingScale = -this.state.velocityScale * this.params.springDamping;
+                
+                // Update accelerations (F = ma, so a = F/m)
+                const accelerationX = (forceX + dampingX) / this.params.mass;
+                const accelerationY = (forceY + dampingY) / this.params.mass;
+                const accelerationScale = (forceScale + dampingScale) / this.params.mass;
+                
+                // Update velocities
+                this.state.velocityX += accelerationX * dt;
+                this.state.velocityY += accelerationY * dt;
+                this.state.velocityScale += accelerationScale * dt;
+                
+                // Update positions (convert back to degrees for CSS)
+                this.state.rotateX += this.state.velocityX * dt * (180 / Math.PI);
+                this.state.rotateY += this.state.velocityY * dt * (180 / Math.PI);
+                this.state.scale += this.state.velocityScale * dt;
+                
+                // Apply tooltip opacity spring
+                const opacityForce = (this.state.tooltipOpacity - this.state.tooltipOpacity) * 350;
+                const opacityDamping = -0 * 30; // No velocity for opacity
+                const opacityAcceleration = (opacityForce + opacityDamping) / 1;
+                // No velocity needed for simple opacity
+                this.state.tooltipOpacity = this.state.isHovering ? 1 : 0;
+            }
+            
+            applyTransforms() {
+                this.cardInner.style.transform = `
+                    rotateX(${this.state.rotateX}deg)
+                    rotateY(${this.state.rotateY}deg)
+                    scale(${this.state.scale})
+                `;
+            }
+            
+            updateStats() {
+                document.getElementById('rotationX').textContent = `${Math.round(this.state.rotateX)}°`;
+                document.getElementById('rotationY').textContent = `${Math.round(this.state.rotateY)}°`;
+                document.getElementById('currentScale').textContent = this.state.scale.toFixed(2);
+            }
+            
+            animate(timestamp = 0) {
+                if (!this.lastTime) this.lastTime = timestamp;
+                
+                const deltaTime = timestamp - this.lastTime;
+                this.lastTime = timestamp;
+                
+                // Cap delta time to prevent large jumps
+                const cappedDeltaTime = Math.min(deltaTime, 32);
+                
+                // Apply spring physics
+                this.springPhysics(cappedDeltaTime);
+                
+                // Apply transforms to DOM
+                this.applyTransforms();
+                
+                // Update statistics
+                this.updateStats();
+                
+                // Continue animation loop
+                this.animationId = requestAnimationFrame(this.animate.bind(this));
+            }
+            
+            resetToDefault() {
+                this.params = {
+                    rotateAmplitude: 14,
+                    scaleOnHover: 1.1,
+                    springStiffness: 100,
+                    springDamping: 30,
+                    mass: 2,
+                    showTooltip: true,
+                    showOverlay: false,
+                    showMobileWarning: true,
+                    tooltipText: 'Hover over the card'
+                };
+                
+                // Reset controls
+                document.getElementById('rotateAmplitude').value = this.params.rotateAmplitude;
+                document.getElementById('rotateAmplitudeValue').textContent = `${this.params.rotateAmplitude}°`;
+                
+                document.getElementById('scaleOnHover').value = this.params.scaleOnHover;
+                document.getElementById('scaleOnHoverValue').textContent = this.params.scaleOnHover.toFixed(2);
+                
+                document.getElementById('springStiffness').value = this.params.springStiffness;
+                document.getElementById('springStiffnessValue').textContent = this.params.springStiffness;
+                
+                document.getElementById('springDamping').value = this.params.springDamping;
+                document.getElementById('springDampingValue').textContent = this.params.springDamping;
+                
+                document.getElementById('showTooltip').checked = this.params.showTooltip;
+                this.tooltip.style.display = this.params.showTooltip ? 'block' : 'none';
+                
+                document.getElementById('showOverlay').checked = this.params.showOverlay;
+                this.cardOverlay.style.display = 'none';
+                
+                document.getElementById('showMobileWarning').checked = this.params.showMobileWarning;
+                const mobileWarning = document.querySelector('.mobile-warning');
+                mobileWarning.style.display = this.params.showMobileWarning && window.innerWidth <= 768 ? 'block' : 'none';
+                
+                // Reset image
+                this.cardImage.src = 'https://images.unsplash.com/photo-1543857778-c4a1a569e388?w=600&h=800&fit=crop&crop=center';
+                document.querySelectorAll('.image-btn').forEach(b => b.classList.remove('active'));
+                document.querySelector('.image-btn[data-image="portrait"]').classList.add('active');
+                
+                // Reset state
+                this.handleMouseLeave();
+                this.state.targetX = 0;
+                this.state.targetY = 0;
+                this.state.targetScale = 1;
+                this.state.tooltipOpacity = 0;
+                this.state.tooltipAngle = 0;
+                
+                // Reset tooltip
+                this.tooltip.textContent = this.params.tooltipText;
+                this.tooltip.style.transform = `translate(0px, 0px) rotate(0deg)`;
+                this.tooltip.style.opacity = 0;
+            }
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', () => {
+            const effect = new TiltedCardEffect();
+            window.tiltedCardEffect = effect;
+        });
+    </script>
+</body>
+</html>

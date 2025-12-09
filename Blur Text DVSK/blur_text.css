@@ -1,0 +1,76 @@
+/* -------- INTERNAL SMOOTH VERSION -------- */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: #000000e0;
+  color: white;
+  font-family: "Poppins", sans-serif,  Fira Code;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+.container {
+  display: flex;
+  gap: 20px;
+  position: relative;
+}
+
+.letter {
+  font-size: 50px;
+  font-weight: 300;
+  color: #000;
+
+  opacity: 0;
+  transform: translateY(-150px);
+  filter: blur(20px);
+  transition: all 0.8s cubic-bezier(0.18, 0.89, 0.32, 1.28);
+}
+
+/* ⭐ STAR */
+.star {
+  font-size: 50px;
+  color: black;
+  position: absolute;
+
+  /* START off-screen bottom-left */
+  left: -260%;
+  top: 500%;
+
+  opacity: 0;
+  filter: blur(20px);
+}
+
+/* ⭐ PERFECT CURVED FLY PATH — CLEAN AND SMOOTH */
+@keyframes starFlySmooth {
+  0% {
+    transform: translate(0, 0) scale(0);
+    opacity: 0;
+  }
+
+  15% {
+    transform: translate(80px, -180px) scale(0.4);
+    opacity: 1;
+  }
+
+  40% {
+    transform: translate(260px, -360px) scale(0.8);
+  }
+
+  70% {
+    transform: translate(420px, -310px) scale(0.95);
+  }
+
+  100% {
+    transform: translate(520px, -450px) scale(1);
+  }
+}
+
+
+
