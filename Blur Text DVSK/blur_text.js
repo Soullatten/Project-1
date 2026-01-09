@@ -4,7 +4,7 @@ window.addEventListener("load", () => {
   const letterK = letters[3];
   const container = document.querySelector(".container");
 
-  // 1️⃣ Animate DVSK letters faster + smoother
+  
   letters.forEach((letter, index) => {
     setTimeout(() => {
       letter.style.opacity = "1";
@@ -13,11 +13,11 @@ window.addEventListener("load", () => {
     }, index * 650);
   });
 
-  // 2️⃣ Start star animation earlier + faster
+
   setTimeout(() => {
     star.style.animation = "starFlySmooth 1.2s cubic-bezier(0.22, 1, 0.36, 1) forwards";
 
-   // 3️⃣ After flight, smooth fade-in + landing beside K
+
 setTimeout(() => {
   const kRect = letterK.getBoundingClientRect();
   const containerRect = container.getBoundingClientRect();
@@ -25,7 +25,7 @@ setTimeout(() => {
   const finalX = kRect.right - containerRect.left + 10;
   const finalY = kRect.top - containerRect.top - 2;
 
-  // ⭐ Smooth fade + movement
+  
   star.style.transition =
     " opacity 0.2s ease-out, filter 0.2s ease-out";
 
@@ -33,7 +33,7 @@ setTimeout(() => {
   star.style.left = finalX + "px";
   star.style.top = finalY + "px";
 
-  // ⭐ Fade in (no pop)
+
   star.style.opacity = "1";
   star.style.filter = "blur(3px)";
   star.style.transform = "scale(1)";
