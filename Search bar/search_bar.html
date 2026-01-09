@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Animated Search Bar</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            padding: 20px;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 800px;
+            padding: 40px;
+            background-color: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 10px;
+            font-weight: 700;
+            font-size: 2.5rem;
+            text-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        
+        .subtitle {
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            margin-bottom: 40px;
+            font-size: 1.1rem;
+        }
+        
+        .search-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 30px;
+            position: relative;
+        }
+        
+        .search-bar {
+            width: 60px;
+            height: 60px;
+            background-color: white;
+            border-radius: 60px;
+            position: relative;
+            transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .search-bar.active {
+            width: 100%;
+            max-width: 500px;
+        }
+        
+        .search-bar input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            padding: 20px 70px 20px 20px;
+            font-size: 18px;
+            color: #333;
+            outline: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .search-bar.active input {
+            opacity: 1;
+        }
+        
+        .search-icon {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+        
+        .search-icon:hover {
+            transform: scale(1.05);
+        }
+        
+        .search-icon i {
+            font-size: 22px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .search-bar.active .search-icon i {
+            transform: rotate(90deg);
+        }
+        
+        .search-icon::before {
+            content: '';
+            position: absolute;
+            width: 15px;
+            height: 15px;
+            border: 3px solid white;
+            border-radius: 50%;
+            transform: translate(-2px, -2px);
+        }
+        
+        .search-icon::after {
+            content: '';
+            position: absolute;
+            width: 3px;
+            height: 9px;
+            background: white;
+            transform: translate(6px, 6px) rotate(-45deg);
+        }
+        
+        .close-icon {
+            position: absolute;
+            top: 50%;
+            right: 70px;
+            transform: translateY(-50%);
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            opacity: 0;
+            transition: all 0.3s ease;
+            z-index: 1;
+        }
+        
+        .search-bar.active .close-icon {
+            opacity: 0.5;
+        }
+        
+        .close-icon:hover {
+            opacity: 1 !important;
+        }
+        
+        .close-icon::before,
+        .close-icon::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 100%;
+            height: 2px;
+            background-color: #666;
+            transform-origin: center;
+        }
+        
+        .close-icon::before {
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+        
+        .close-icon::after {
+            transform: translate(-50%, -50%) rotate(-45deg);
+        }
+        
+        .demo-text {
+            color: rgba(255, 255, 255, 0.8);
+            text-align: center;
+            margin-top: 30px;
+            font-size: 0.9rem;
+            line-height: 1.5;
+        }
+        
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 40px;
+        }
+        
+        .feature {
+            background-color: rgba(255, 255, 255, 0.15);
+            padding: 12px 20px;
+            border-radius: 50px;
+            color: white;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .feature:hover {
+            background-color: rgba(255, 255, 255, 0.25);
+            transform: translateY(-3px);
+        }
+        
+        .feature i {
+            color: #6a11cb;
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 25px;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .search-bar.active {
+                width: 100%;
+            }
+            
+            .features {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Animated Search Bar</h1>
+        <p class="subtitle">Click the search icon to expand and see the animation</p>
+        
+        <div class="search-container">
+            <div class="search-bar">
+                <input type="text" placeholder="Search for anything..." id="searchInput">
+                <div class="close-icon" id="closeBtn"></div>
+                <div class="search-icon" id="searchBtn">
+                    <i class="fas fa-search"></i>
+                </div>
+            </div>
+        </div>
+        
+        <div class="demo-text">
+            <p>Try typing something in the search bar and press Enter or click the search icon.</p>
+            <p>You can also click the X button to clear the search field.</p>
+        </div>
+        
+        <div class="features">
+            <div class="feature">
+                <i class="fas fa-expand-alt"></i>
+                <span>Smooth expand animation</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-mouse-pointer"></i>
+                <span>Interactive hover effects</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-keyboard"></i>
+                <span>Keyboard shortcuts support</span>
+            </div>
+            <div class="feature">
+                <i class="fas fa-mobile-alt"></i>
+                <span>Fully responsive design</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchBar = document.querySelector('.search-bar');
+            const searchBtn = document.getElementById('searchBtn');
+            const closeBtn = document.getElementById('closeBtn');
+            const searchInput = document.getElementById('searchInput');
+            
+            // Toggle search bar on search button click
+            searchBtn.addEventListener('click', function() {
+                searchBar.classList.add('active');
+                searchInput.focus();
+                
+                // If there's text in the input, perform search
+                if(searchInput.value.trim() !== '') {
+                    performSearch();
+                }
+            });
+            
+            // Close search bar on close button click
+            closeBtn.addEventListener('click', function() {
+                searchInput.value = '';
+                searchInput.focus();
+            });
+            
+            // Close search bar when clicking outside (except on the search button)
+            document.addEventListener('click', function(event) {
+                const isClickInsideSearchBar = searchBar.contains(event.target);
+                const isClickOnSearchBtn = searchBtn.contains(event.target);
+                
+                if (!isClickInsideSearchBar && !isClickOnSearchBtn) {
+                    if (searchInput.value.trim() === '') {
+                        searchBar.classList.remove('active');
+                    }
+                }
+            });
+            
+            // Perform search on Enter key press
+            searchInput.addEventListener('keyup', function(event) {
+                if (event.key === 'Enter') {
+                    performSearch();
+                }
+                
+                // Hide close button if input is empty
+                if (searchInput.value.trim() === '') {
+                    closeBtn.style.opacity = '0.5';
+                } else {
+                    closeBtn.style.opacity = '1';
+                }
+            });
+            
+            // Function to perform search
+            function performSearch() {
+                const searchTerm = searchInput.value.trim();
+                if (searchTerm !== '') {
+                    alert(`Searching for: "${searchTerm}"\n\nIn a real application, this would trigger a search query.`);
+                    // In a real application, you would submit a form or make an API call here
+                } else {
+                    searchBar.classList.remove('active');
+                }
+            }
+            
+            // Keyboard shortcut: Ctrl+K or Cmd+K to focus search
+            document.addEventListener('keydown', function(event) {
+                if ((event.ctrlKey || event.metaKey) && event.key === 'k') {
+                    event.preventDefault();
+                    searchBar.classList.add('active');
+                    searchInput.focus();
+                }
+                
+                // Escape key to close search
+                if (event.key === 'Escape') {
+                    if (searchInput.value.trim() === '') {
+                        searchBar.classList.remove('active');
+                    } else {
+                        searchInput.value = '';
+                    }
+                }
+            });
+            
+            // Add some initial animation when page loads
+            setTimeout(() => {
+                searchBar.style.transform = 'scale(1.05)';
+                setTimeout(() => {
+                    searchBar.style.transform = 'scale(1)';
+                }, 200);
+            }, 500);
+        });
+    </script>
+</body>
+</html>
